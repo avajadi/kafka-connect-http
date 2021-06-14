@@ -38,6 +38,8 @@ public class Offset {
 
     private static final String TIMESTAMP_KEY = "timestamp";
 
+    private static final String TRV_LAST_CHANGE_ID_KEY = "last_changed_id";
+
     private final Map<String, ?> properties;
 
     private Offset(Map<String, ?> properties) {
@@ -48,16 +50,22 @@ public class Offset {
         return new Offset(properties);
     }
 
+    public static Offset of(Map<String, ?> properties, String key, Instant timestamp) {
+        Map<String, Object> props = new HashMap<>(properties);
+        props.put(KEY_KEY, key);
+        props.put(TIMESTAMP_KEY, timestamp.toString());
+        return new Offset(props);
+    }
+
     public static Offset of(Map<String, ?> properties, String key) {
         Map<String, Object> props = new HashMap<>(properties);
         props.put(KEY_KEY, key);
         return new Offset(props);
     }
 
-    public static Offset of(Map<String, ?> properties, String key, Instant timestamp) {
+    public static Offset of(Map<String, ?> properties, Long lastChangeId) {
         Map<String, Object> props = new HashMap<>(properties);
-        props.put(KEY_KEY, key);
-        props.put(TIMESTAMP_KEY, timestamp.toString());
+        props.put(TRV_LAST_CHANGE_ID_KEY, lastChangeId);
         return new Offset(props);
     }
 
@@ -72,4 +80,9 @@ public class Offset {
     public Optional<Instant> getTimestamp() {
         return ofNullable((String) properties.get(TIMESTAMP_KEY)).map(Instant::parse);
     }
+
+    public Optional<Integer> getLastChangeId() {
+        return ofNullable((Integer) properties.get(TRV_LAST_CHANGE_ID_KEY));
+    }
+
 }

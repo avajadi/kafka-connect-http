@@ -37,6 +37,7 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
+import se.ri.ds.mos.deplide.model.trv.LastChangeIdFactory;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -80,6 +81,12 @@ public class HttpSourceTask extends SourceTask {
         this(HttpSourceConnectorConfig::new);
     }
 
+    private static List<Map<String, ?>> extractOffsets(List<SourceRecord> recordsToSend) {
+        return recordsToSend.stream()
+                .map(SourceRecord::sourceOffset)
+                .collect(toList());
+    }
+
     @Override
     public void start(Map<String, String> settings) {
 
@@ -108,6 +115,10 @@ public class HttpSourceTask extends SourceTask {
 
         HttpResponse response = execute(request);
 
+        // Extract unique id for TRV, defaulting to 1
+        Long lastChangeId = LastChangeIdFactory.extract(response).orElse(1l);
+
+        offset = Offset.of( offset.toMap(), lastChangeId );
         List<SourceRecord> records = responseParser.parse(response);
 
         List<SourceRecord> unseenRecords = recordSorter.sort(records).stream()
@@ -127,12 +138,6 @@ public class HttpSourceTask extends SourceTask {
         } catch (IOException e) {
             throw new RetriableException(e);
         }
-    }
-
-    private static List<Map<String, ?>> extractOffsets(List<SourceRecord> recordsToSend) {
-        return recordsToSend.stream()
-                .map(SourceRecord::sourceOffset)
-                .collect(toList());
     }
 
     @Override
